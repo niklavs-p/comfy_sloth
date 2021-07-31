@@ -12,10 +12,12 @@ import {
 const filter_reducer = (state, action) => {
   switch (action.type) {
     case LOAD_PRODUCTS:
+      const maxPrice = Math.max(...action.payload.map((p) => p.price));
       return {
         ...state,
         all_products: [...action.payload],
         filtered_products: [...action.payload],
+        filters: { ...state.filters, max_price: maxPrice, price: maxPrice },
       };
 
     case SET_GRIDVIEW:
@@ -56,6 +58,65 @@ const filter_reducer = (state, action) => {
               return b.name.localeCompare(a.name);
           }
         }),
+      };
+
+    case UPDATE_FILTERS:
+      return {
+        ...state,
+        filters: {
+          ...state.filters,
+          [action.payload.name]: action.payload.value,
+        },
+      };
+
+    case FILTER_PRODUCTS:
+      const { all_products } = state;
+      const { text, category, company, color, price, max_price, shipping } =
+        state.filters;
+      let tempProducts = [...all_products];
+
+      if (text) {
+        tempProducts = tempProducts.filter((product) =>
+          product.name.toLowerCase().includes(text)
+        );
+      }
+      if (category !== 'all') {
+        tempProducts = tempProducts.filter(
+          (product) => product.category === category
+        );
+      }
+      if (company !== 'all') {
+        tempProducts = tempProducts.filter(
+          (product) => product.company === company
+        );
+      }
+      if (color !== 'all') {
+        tempProducts = tempProducts.filter((product) =>
+          product.colors.includes(color)
+        );
+      }
+      if (price < max_price) {
+        tempProducts = tempProducts.filter((product) => product.price <= price);
+      }
+      if (shipping) {
+        tempProducts = tempProducts.filter((product) => product.shipping);
+      }
+
+      return { ...state, filtered_products: tempProducts };
+
+    case CLEAR_FILTERS:
+      return {
+        ...state,
+        filters: {
+          text: '',
+          company: 'all',
+          category: 'all',
+          color: 'all',
+          min_price: 0,
+          max_price: state.filters.max_price,
+          price: state.filters.max_price,
+          shipping: false,
+        },
       };
 
     default:
